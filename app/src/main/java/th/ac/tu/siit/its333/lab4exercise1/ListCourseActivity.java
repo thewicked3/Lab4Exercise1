@@ -4,13 +4,17 @@ import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
 import android.support.v7.app.ActionBarActivity;
 import android.os.Bundle;
+import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
+import android.view.View;
+import android.widget.AdapterView;
 import android.widget.ListView;
 import android.widget.SimpleCursorAdapter;
+import android.widget.Toast;
 
 
-public class ListCourseActivity extends ActionBarActivity {
+public class ListCourseActivity extends ActionBarActivity implements AdapterView.OnItemClickListener, AdapterView.OnItemLongClickListener {
 
     CourseDBHelper helper;
     SimpleCursorAdapter adapter;
@@ -19,6 +23,26 @@ public class ListCourseActivity extends ActionBarActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_list_course);
+
+        helper = new CourseDBHelper(this);
+
+        SQLiteDatabase db = helper.getReadableDatabase();
+        Cursor cursor = db.rawQuery(
+                "SELECT _id,code,(grade || ' ' || '(' ||  credit || ' credit)') AS gr FROM course ORDER BY _id DESC;",
+                null);
+
+
+        adapter = new SimpleCursorAdapter(this,
+                android.R.layout.simple_list_item_2,
+                cursor,
+                new String[] {"code", "gr"},
+                new int[] {android.R.id.text1, android.R.id.text2},
+                0);
+
+        ListView lv = (ListView)findViewById(R.id.listView);
+        lv.setAdapter(adapter);
+        lv.setOnItemClickListener(this);
+        lv.setOnItemLongClickListener(this);
 
     }
 
@@ -43,5 +67,38 @@ public class ListCourseActivity extends ActionBarActivity {
         }
 
         return super.onOptionsItemSelected(item);
+    }
+
+    @Override
+    public void onItemClick(AdapterView<?> parent, View view,
+                            int position, long id) {
+        Log.d("course", id + " is clicked");
+    }
+
+    @Override
+    public boolean onItemLongClick(AdapterView<?> parent, View view,
+                                   int position, long id) {
+        SQLiteDatabase db = helper.getWritableDatabase();
+
+        int n = db.delete("course",
+                "_id = ?",
+                new String[]{Long.toString(id)});
+
+        if (n == 1) {
+            Toast t = Toast.makeText(this.getApplicationContext(),
+                    "Successfully deleted the selected item.",
+                    Toast.LENGTH_SHORT);
+            t.show();
+
+            // retrieve a new collection of records
+            Cursor cursor = db.rawQuery(
+                    "SELECT _id,code,(grade || ' ' || '(' ||  credit || ' credit)') As gr FROM course ORDER BY _id DESC;",
+                    null);
+
+            // update the adapter
+            adapter.changeCursor(cursor);
+        }
+        db.close();
+        return true;
     }
 }

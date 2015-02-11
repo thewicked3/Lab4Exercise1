@@ -28,6 +28,27 @@ public class MainActivity extends ActionBarActivity {
     protected void onResume() {
         super.onResume();
 
+        helper = new CourseDBHelper(this);
+        SQLiteDatabase db = helper.getReadableDatabase();
+        Cursor cursor = db.rawQuery(
+                "SELECT SUM(credit) cr, SUM(credit*value) gp FROM course;",
+                null);
+        cursor.moveToFirst();
+
+        Double cr  = cursor.getDouble(0);
+        Double gp  = cursor.getDouble(1);
+        double gpa = gp/cr;
+
+        TextView tvGP =(TextView) findViewById(R.id.tvGP);
+        tvGP.setText(Double.toString(gp));
+        TextView tvCR =(TextView) findViewById(R.id.tvCR);
+        tvCR.setText(Double.toString(cr));
+        TextView tvGPA =(TextView) findViewById(R.id.tvGPA);
+        tvGPA.setText(Double.toString(gpa));
+
+
+
+
         // This method is called when this activity is put foreground.
 
     }
@@ -48,6 +69,14 @@ public class MainActivity extends ActionBarActivity {
                 break;
 
             case R.id.btReset:
+                SQLiteDatabase db = helper.getReadableDatabase();
+                int n_rows = db.delete("course","",null);
+               TextView tvGP = (TextView) findViewById(R.id.tvGP);
+                tvGP.setText("0.0");
+                TextView tvCR = (TextView) findViewById(R.id.tvCR);
+                tvCR.setText("0.0");
+                TextView tvGPA = (TextView) findViewById(R.id.tvGPA);
+                tvGPA.setText("0.0");
 
                 break;
         }
@@ -61,8 +90,21 @@ public class MainActivity extends ActionBarActivity {
                 int credit = data.getIntExtra("credit", 0);
                 String grade = data.getStringExtra("grade");
 
+                helper = new CourseDBHelper(this.getApplicationContext());
+                SQLiteDatabase dbw = helper.getWritableDatabase();
+                ContentValues r = new ContentValues();
+                r.put("code", code);
+                r.put("credit", credit);
+                r.put("grade", grade);
+                r.put("value",gradeToValue(grade));
+
+                long new_id = dbw.insert("course", null, r);
+
+
+
             }
         }
+        onResume();
 
         Log.d("course", "onActivityResult");
     }
@@ -93,6 +135,7 @@ public class MainActivity extends ActionBarActivity {
         return true;
     }
 
+
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
         // Handle action bar item clicks here. The action bar will
@@ -107,4 +150,5 @@ public class MainActivity extends ActionBarActivity {
 
         return super.onOptionsItemSelected(item);
     }
+
 }
