@@ -100,11 +100,11 @@ public class MainActivity extends ActionBarActivity {
 
                 long new_id = dbw.insert("course", null, r);
 
-
+                onResume();
 
             }
         }
-        onResume();
+
 
         Log.d("course", "onActivityResult");
     }
